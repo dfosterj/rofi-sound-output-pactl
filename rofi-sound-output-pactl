@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# Function to list available sinks
+list_sinks() {
+    pactl list short sinks | awk '{print $2}'
+}
+
+# Function to set the default sink
+set_default_sink() {
+    local sink=$1
+    pactl set-default-sink "$sink"
+    # Move all playing streams to the new sink
+    pactl list short sink-inputs | while read -r stream; do
+        stream_id=$(echo "$stream" | awk '{print $1}')
+        pactl move-sink-input "$stream_id" "$sink"
+    done
+}
+
+# Generate the Rofi menu
+chosen_sink=$(list_sinks | rofi -dmenu -p "Select Audio Output:")
+
+# Set the selected sink as default
+if [ -n "$chosen_sink" ]; then
+    set_default_sink "$chosen_sink"
+fi
+
